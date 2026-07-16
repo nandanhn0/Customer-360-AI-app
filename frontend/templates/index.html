@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Customer 360 | Volopay Growth Squad</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="min-h-screen">
+
+<header class="border-b border-[var(--line)] bg-white sticky top-0 z-10">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-[var(--navy)] flex items-center justify-center">
+        <i data-lucide="layers" class="w-4 h-4 text-white"></i>
+      </div>
+      <span class="font-display font-semibold text-lg text-[var(--navy)]">Customer 360</span>
+      <span class="text-xs text-gray-400 ml-2 hidden sm:inline">Unified account intelligence</span>
+    </div>
+    <div class="text-xs text-gray-400">Volopay Growth Squad · Task 2 Prototype</div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-6 py-8">
+  <div class="mb-6">
+    <h1 class="font-display text-2xl font-semibold text-[var(--navy)]">Accounts</h1>
+    <p class="text-sm text-gray-500 mt-1">CRM, support, email, Slack, product usage, and billing — merged into one view per account.</p>
+  </div>
+
+  <div class="flex flex-col sm:flex-row gap-3 mb-6">
+    <div class="relative flex-1">
+      <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+      <input id="searchInput" type="text" placeholder="Search by company, industry, or country..."
+        class="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[var(--line)] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]">
+    </div>
+    <select id="statusFilter" class="px-4 py-2.5 rounded-lg border border-[var(--line)] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]">
+      <option value="">All statuses</option>
+      <option value="Healthy">Healthy</option>
+      <option value="Needs Attention">Needs Attention</option>
+      <option value="At Risk">At Risk</option>
+    </select>
+    <select id="segmentFilter" class="px-4 py-2.5 rounded-lg border border-[var(--line)] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]">
+      <option value="">All segments</option>
+      <option value="Enterprise">Enterprise</option>
+      <option value="Growth">Growth</option>
+      <option value="SMB">SMB</option>
+    </select>
+  </div>
+
+  <div id="summaryBar" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6"></div>
+
+  <div id="results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+</main>
+
+<script>
+lucide.createIcons();
+
+const priorityColor = { Critical: 'var(--red)', High: 'var(--amber)', Medium: '#2563EB', Low: 'var(--green)' };
+const statusChip = {
+  'Healthy': 'bg-green-50 text-green-700',
+  'Needs Attention': 'bg-amber-50 text-amber-700',
+  'At Risk': 'bg-red-50 text-red-700',
+};
+
+function gaugeColor(score){
+  if(score >= 75) return 'var(--green)';
+  if(score >= 50) return 'var(--amber)';
+  return 'var(--red)';
+}
+
+function renderSkeleton(){
+  document.getElementById('results').innerHTML = Array(6).fill(0).map(()=>`
+    <div class="card p-5">
+      <div class="skeleton h-4 w-2/3 mb-3"></div>
+      <div class="skeleton h-3 w-1/3 mb-5"></div>
+      <div class="skeleton h-16 w-16 rounded-full"></div>
+    </div>`).join('');
+}
+
+function renderSummary(customers){
+  const total = customers.length;
+  const atRisk = customers.filter(c=>c.account_status==='At Risk').length;
+  const critical = customers.filter(c=>c.priority==='Critical').length;
+  const avgHealth = Math.round(customers.reduce((a,c)=>a+c.health_score,0)/(total||1));
+  const cards = [
+    {label:'Total Accounts', value: total, icon:'building-2'},
+    {label:'At Risk', value: atRisk, icon:'alert-triangle', color:'text-red-600'},
+    {label:'Critical Priority', value: critical, icon:'flame', color:'text-amber-600'},
+    {label:'Avg Health Score', value: avgHealth, icon:'activity', color:'text-teal-700'},
+  ];
+  document.getElementById('summaryBar').innerHTML = cards.map(c=>`
+    <div class="card p-4 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-[var(--teal-soft)] flex items-center justify-center">
+        <i data-lucide="${c.icon}" class="w-4 h-4 ${c.color||'text-[var(--teal)]'}"></i>
+      </div>
+      <div>
+        <div class="text-xl font-display font-semibold text-[var(--navy)]">${c.value}</div>
+        <div class="text-xs text-gray-500">${c.label}</div>
+      </div>
+    </div>`).join('');
+  lucide.createIcons();
+}
+
+function renderResults(customers){
+  const el = document.getElementById('results');
+  if(customers.length === 0){
+    el.innerHTML = `<div class="col-span-full text-center py-16 text-gray-400">
+      <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2"></i>
+      No accounts match these filters.</div>`;
+    lucide.createIcons();
+    return;
+  }
+  el.innerHTML = customers.map(c => `
+    <a href="/customer/${c.id}" class="card p-5 fade-in hover:shadow-md hover:border-[var(--teal)] transition block">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <div class="font-display font-semibold text-[var(--navy)]">${c.name}</div>
+          <div class="text-xs text-gray-500 mt-0.5">${c.industry} · ${c.country} · ${c.segment}</div>
+        </div>
+        <span class="chip ${statusChip[c.account_status]}">${c.account_status}</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <div class="gauge" style="--pct:${c.health_score}; --gauge-color:${gaugeColor(c.health_score)}">
+          <span>${c.health_score}</span>
+        </div>
+        <div class="text-right">
+          <div class="text-xs text-gray-400">Priority</div>
+          <div class="text-sm font-semibold" style="color:${priorityColor[c.priority]}">${c.priority}</div>
+          <div class="text-xs text-gray-400 mt-1">Owner: ${c.owner}</div>
+        </div>
+      </div>
+    </a>`).join('');
+  lucide.createIcons();
+}
+
+let allCustomers = [];
+
+async function load(){
+  renderSkeleton();
+  const q = document.getElementById('searchInput').value;
+  const status = document.getElementById('statusFilter').value;
+  const segment = document.getElementById('segmentFilter').value;
+  const params = new URLSearchParams({ q, status, segment });
+  const res = await fetch(`/api/customers?${params}`);
+  const data = await res.json();
+  allCustomers = data;
+  renderSummary(data);
+  renderResults(data);
+}
+
+document.getElementById('searchInput').addEventListener('input', debounce(load, 250));
+document.getElementById('statusFilter').addEventListener('change', load);
+document.getElementById('segmentFilter').addEventListener('change', load);
+
+function debounce(fn, ms){
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(()=>fn(...args), ms); };
+}
+
+load();
+</script>
+</body>
+</html>
