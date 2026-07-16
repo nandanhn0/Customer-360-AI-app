@@ -1,0 +1,37 @@
+:root{
+  --navy: #101828;
+  --navy-soft: #1D2939;
+  --teal: #0F9D8B;
+  --teal-soft: #E6F6F3;
+  --amber: #D97706;
+  --red: #DC2626;
+  --green: #16A34A;
+  --bg: #F5F6F8;
+  --line: #E4E7EC;
+}
+body{ background: var(--bg); font-family: 'Inter', sans-serif; }
+.font-display{ font-family: 'Space Grotesk', sans-serif; }
+
+.gauge{
+  --pct: 0;
+  width: 68px; height: 68px; border-radius: 50%;
+  background: conic-gradient(var(--gauge-color, var(--teal)) calc(var(--pct) * 1%), #E4E7EC 0);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.gauge::before{
+  content:""; position:absolute; inset:6px; background:#fff; border-radius:50%;
+}
+.gauge span{ position:relative; font-weight:700; font-size:0.95rem; font-family:'Space Grotesk',sans-serif; }
+
+.card{ background:#fff; border:1px solid var(--line); border-radius:14px; }
+.chip{ display:inline-flex; align-items:center; gap:4px; padding:2px 10px; border-radius:999px; font-size:0.72rem; font-weight:600; letter-spacing:.02em; }
+
+.skeleton{ background: linear-gradient(90deg,#EEF0F3 25%,#E4E7EC 37%,#EEF0F3 63%); background-size:400% 100%; animation: shimmer 1.4s ease infinite; border-radius:8px; }
+@keyframes shimmer{ 0%{background-position:100% 50%} 100%{background-position:0 50%} }
+
+.fade-in{ animation: fadeIn .35s ease both; }
+@keyframes fadeIn{ from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:translateY(0)} }
+
+::-webkit-scrollbar{ width:8px; height:8px; }
+::-webkit-scrollbar-thumb{ background:#CBD2D9; border-radius:8px; }
